@@ -1,0 +1,77 @@
+# Render deployment configuration
+# Docs: https://render.com/docs/infrastructure-as-code
+
+services:
+  - type: web
+    name: lendlyfin-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    plan: free
+
+    envVars:
+      # ── App ──────────────────────────────────────────────────
+      - key: APP_ENV
+        value: production
+
+      - key: APP_VERSION
+        value: 1.0.0
+
+      # ── Security ─────────────────────────────────────────────
+      # Render will auto-generate a secure random value for SECRET_KEY
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: ALGORITHM
+        value: HS256
+
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 60
+
+      # ── Database ─────────────────────────────────────────────
+      # Option A (quick start): SQLite — simple, no extra setup.
+      #   ⚠ Data resets on every new deploy. Fine for testing.
+      - key: DATABASE_URL
+        value: sqlite:///./lendlyfin.db
+
+      # Option B (recommended for production): Neon PostgreSQL (free forever)
+      #   1. Create free account at https://neon.tech
+      #   2. Create a project → copy the connection string
+      #   3. Replace the DATABASE_URL value above with:
+      #      postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+      # ── Admin credentials ────────────────────────────────────
+      # CHANGE THESE before going live!
+      - key: ADMIN_EMAIL
+        value: admin@lendlyfin.com.au
+
+      - key: ADMIN_PASSWORD
+        sync: false   # set manually in Render dashboard — never commit real passwords
+
+      - key: BROKER_EMAIL
+        value: broker@lendlyfin.com.au
+
+      - key: BROKER_PASSWORD
+        sync: false   # set manually in Render dashboard
+
+      # ── Email (SendGrid) ─────────────────────────────────────
+      # Free tier: 100 emails/day. Sign up at https://sendgrid.com
+      - key: SENDGRID_API_KEY
+        sync: false   # set manually in Render dashboard
+
+      - key: EMAIL_FROM
+        value: hello@lendlyfin.com.au
+
+      - key: EMAIL_FROM_NAME
+        value: Lendlyfin
+
+      - key: BROKER_NOTIFICATION_EMAIL
+        value: broker@lendlyfin.com.au
+
+      # ── CORS ─────────────────────────────────────────────────
+      # Add your Netlify URL once you know it, e.g.:
+      # https://lendlyfin.netlify.app,https://lendlyfin.com.au
+      - key: ALLOWED_ORIGINS
+        value: https://lendlyfin.netlify.app,https://lendlyfin.com.au,https://www.lendlyfin.com.au
