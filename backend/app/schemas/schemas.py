@@ -237,3 +237,8 @@ class DashboardStats(BaseModel):
 class MessageResponse(BaseModel):
     message: str
     success: bool = True
+
+
+# Resolve forward references (Pydantic v2 requirement)
+TokenResponse.model_rebuild()
+LeadOut.model_rebuild()
