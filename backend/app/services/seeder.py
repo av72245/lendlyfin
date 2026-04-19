@@ -27,27 +27,32 @@ DEFAULT_RATES = [
 ]
 
 
+def _upsert_user(db: Session, email: str, password: str, full_name: str, role: UserRole):
+    """Create user if missing, or sync password from env vars on every startup."""
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        # Always re-hash from current env var so Render dashboard
+        # password changes take effect immediately on next deploy
+        user.hashed_pw = hash_password(password)
+        print(f"  ✓ Synced password for: {email}")
+    else:
+        db.add(User(
+            email=email,
+            full_name=full_name,
+            hashed_pw=hash_password(password),
+            role=role,
+        ))
+        print(f"  ✓ Created {role.value} user: {email}")
+
+
 def seed_database(db: Session):
-    """Idempotent seed — only inserts if records don't exist."""
+    """Seed default users and rates. Passwords are re-synced every startup."""
 
     # ── USERS ──────────────────────────────────────────────────
-    if not db.query(User).filter(User.email == settings.ADMIN_EMAIL).first():
-        db.add(User(
-            email=settings.ADMIN_EMAIL,
-            full_name="Admin",
-            hashed_pw=hash_password(settings.ADMIN_PASSWORD),
-            role=UserRole.admin,
-        ))
-        print(f"  ✓ Created admin user: {settings.ADMIN_EMAIL}")
-
-    if not db.query(User).filter(User.email == settings.BROKER_EMAIL).first():
-        db.add(User(
-            email=settings.BROKER_EMAIL,
-            full_name="Mortgage Broker",
-            hashed_pw=hash_password(settings.BROKER_PASSWORD),
-            role=UserRole.broker,
-        ))
-        print(f"  ✓ Created broker user: {settings.BROKER_EMAIL}")
+    _upsert_user(db, settings.ADMIN_EMAIL, settings.ADMIN_PASSWORD,
+                 "Admin", UserRole.admin)
+    _upsert_user(db, settings.BROKER_EMAIL, settings.BROKER_PASSWORD,
+                 "Mortgage Broker", UserRole.broker)
 
     # ── RATES ──────────────────────────────────────────────────
     for r in DEFAULT_RATES:

@@ -1,5 +1,16 @@
 from datetime import datetime, timedelta
 from typing import Optional
+
+# ── passlib + bcrypt 4.x compatibility shim ──────────────────
+# passlib 1.7.4 tries to read bcrypt.__about__.__version__ which
+# was removed in bcrypt ≥ 4.1.  This monkey-patch prevents the
+# AttributeError that crashes the app on startup.
+import bcrypt as _bcrypt
+if not hasattr(_bcrypt, "__about__"):
+    class _About:
+        __version__ = getattr(_bcrypt, "__version__", "4.2.0")
+    _bcrypt.__about__ = _About
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status

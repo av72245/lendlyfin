@@ -199,13 +199,14 @@ function updateRC() {
   const n = term * freq;
   let pmt;
   if (type === 'io') {
-    pmt = amt * (rate / 100 / 12);
+    // Interest-only: use the per-period rate matching the selected frequency
+    pmt = amt * r;
   } else {
     pmt = amt * r * Math.pow(1+r,n) / (Math.pow(1+r,n) - 1);
   }
 
   const totalPaid     = pmt * n;
-  const totalInterest = type === 'io' ? pmt * n : totalPaid - amt;
+  const totalInterest = type === 'io' ? totalPaid : totalPaid - amt;
 
   document.getElementById('rc-result').textContent   = fmt(pmt);
   document.getElementById('rc-total').textContent    = fmt(totalPaid);
